@@ -13,6 +13,8 @@ const (
 	LBRACE       // value insert start `{{`
 	RBRACE       // value insert start `}}`
 
+    ESC_CHAR // escape character `\`
+
 	// methods
 	POST
 	GET
