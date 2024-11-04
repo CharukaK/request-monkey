@@ -7,7 +7,10 @@ import (
 )
 
 func TestSingleCharacterTokens(t *testing.T) {
-	input := "=@"
+	input := `
+        =
+             @
+    `
 
 	tests := []struct {
 		expectedType    token.TokenType
@@ -31,13 +34,13 @@ func TestSingleCharacterTokens(t *testing.T) {
 			)
 		}
 
-        if tok.Literal != tt.expectedLiteral {
+		if tok.Literal != tt.expectedLiteral {
 			t.Fatalf(
 				`test [%d] - token literal is wrong, expected='%s', got='%s'`,
 				i,
 				tt.expectedLiteral,
 				tok.Literal,
 			)
-        }
+		}
 	}
 }

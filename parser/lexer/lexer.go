@@ -21,6 +21,7 @@ func (lx *Lexer) readChar() {
 }
 
 func (lx *Lexer) NextToken() (tok token.Token) {
+	lx.skipWhiteSpaces()
 	switch lx.ch {
 	case '=':
 		tok = newToken(token.ASSIGN, token.LiteralMap[token.ASSIGN])
@@ -38,6 +39,12 @@ func newToken(tt token.TokenType, literal string) token.Token {
 	return token.Token{
 		Type:    tt,
 		Literal: literal,
+	}
+}
+
+func (lx *Lexer) skipWhiteSpaces() {
+	for lx.ch == ' ' || lx.ch == '\r' || lx.ch == '\n' || lx.ch == '\t' {
+		lx.readChar()
 	}
 }
 
