@@ -6,19 +6,16 @@ import (
 	"github.com/CharukaK/request-monkey/parser/token"
 )
 
-func TestSingleCharacterTokens(t *testing.T) {
-	input := `
-        =
-             @
-    `
-
+func TestCommentStrings(t *testing.T) {
+	input := `# hello world`
 	tests := []struct {
 		expectedType    token.TokenType
 		expectedLiteral string
 	}{
-		{token.ASSIGN, "="},
-		{token.IDENT_PREFIX, "@"},
+		{token.COMMENT, "#"},
+		{token.ANY_TEXT, " hello world"},
 	}
+
 
 	l := New(input)
 
@@ -44,3 +41,4 @@ func TestSingleCharacterTokens(t *testing.T) {
 		}
 	}
 }
+
