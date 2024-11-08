@@ -6,16 +6,24 @@ import (
 	"github.com/CharukaK/request-monkey/parser/token"
 )
 
+// ignore comments
 func TestCommentStrings(t *testing.T) {
-	input := `# hello world`
+	input := `
+    # hello world
+    someText # comment after text
+    # test 123
+    `
 	tests := []struct {
 		expectedType    token.TokenType
 		expectedLiteral string
 	}{
-		{token.COMMENT, "#"},
-		{token.ANY_TEXT, " hello world"},
-	}
 
+		{expectedType: token.NEW_LINE, expectedLiteral: ""},
+		{expectedType: token.NEW_LINE, expectedLiteral: ""},
+		{expectedType: token.ANY_TEXT, expectedLiteral: "someText"},
+		{expectedType: token.NEW_LINE, expectedLiteral: ""},
+		{expectedType: token.NEW_LINE, expectedLiteral: ""},
+	}
 
 	l := New(input)
 
@@ -24,10 +32,10 @@ func TestCommentStrings(t *testing.T) {
 
 		if tok.Type != tt.expectedType {
 			t.Fatalf(
-				`test [%d] - token type is wrong, expected='%s', got='%s'`,
+				`test [%d] - token type is wrong, expected='%d', got='%d'`,
 				i,
-				tt.expectedLiteral,
-				tok.Literal,
+				tt.expectedType,
+				tok.Type,
 			)
 		}
 
@@ -41,4 +49,3 @@ func TestCommentStrings(t *testing.T) {
 		}
 	}
 }
-

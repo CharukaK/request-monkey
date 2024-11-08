@@ -7,12 +7,6 @@ type Token struct {
 	Literal string
 }
 
-/**
-Token types based on the syntax
-
-
-*/
-
 const (
 	ILLEGAL TokenType = iota // tokens or characters that can't be figured out
 	EOF                      // let the parser know when to stop
@@ -49,4 +43,11 @@ var KeywordMap = map[string]TokenType{
 	"CONNECT": CONNECT,
 	"OPTIONS": OPTIONS,
 	"TRACE":   TRACE,
+}
+
+func NewToken(tt TokenType, value string) Token {
+	return Token{
+		Type:    tt,
+		Literal: value,
+	}
 }
