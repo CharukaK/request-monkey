@@ -23,6 +23,7 @@ func TestCommentStrings(t *testing.T) {
 		{expectedType: token.ANY_TEXT, expectedLiteral: "someText"},
 		{expectedType: token.NEW_LINE, expectedLiteral: ""},
 		{expectedType: token.NEW_LINE, expectedLiteral: ""},
+		{expectedType: token.EOF, expectedLiteral: ""},
 	}
 
 	l := New(input)

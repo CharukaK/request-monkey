@@ -28,12 +28,12 @@ func (lx *Lexer) NextToken() (tok token.Token) {
 	lx.skipWhiteSpaces()
 
 	switch lx.ch {
+	case 0:
+		tok.Literal = ""
+		tok.Type = token.EOF
 	case '#':
 		lx.skipUntilNewLineOrEof()
 		tok = lx.NextToken()
-	case '0':
-		tok.Literal = ""
-		tok.Type = token.EOF
 	case '\n':
 		tok.Literal = ""
 		tok.Type = token.NEW_LINE
@@ -41,6 +41,9 @@ func (lx *Lexer) NextToken() (tok token.Token) {
 		if isAlphaNumeric(lx.ch) {
 			tok.Literal = lx.readAnyText()
 			tok.Type = token.ANY_TEXT
+		} else {
+			tok.Literal = string(lx.ch)
+			tok.Type = token.ILLEGAL
 		}
 	}
 
