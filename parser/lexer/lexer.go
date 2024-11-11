@@ -1,6 +1,7 @@
 package lexer
 
 import (
+	"fmt"
 	"strings"
 	"unicode/utf8"
 
@@ -29,6 +30,7 @@ func (lx *Lexer) emit(t token.TokenType) {
 
 func (lx *Lexer) run() {
 	for state := lx.stateFn; state != nil; {
+        fmt.Printf("%+v\n", lx.stateFn)
 		state = state(lx)
 	}
 	close(lx.tokens)
@@ -76,14 +78,47 @@ func (lx *Lexer) acceptRun(valid string) {
 	lx.backup()
 }
 
+func (lx *Lexer) NextItem() token.Token {
+	for {
+		select {
+		case token := <-lx.tokens:
+			return token
+		default:
+			lx.stateFn = lx.stateFn(lx)
+		}
+	}
+	panic("not reached")
+}
+
 func initState(lx *Lexer) StateFn {
 	switch lx.next() {
 	case 0:
 		lx.emit(token.EOF)
-    case '@':
+	case '@':
+		lx.emit(token.VAR_DECL_PREFIX)
+		return varDeclState
 	}
 
 	return nil
+}
+
+// terminates lexer and returns a formatted error message to lexer.items
+func (l *Lexer) errorf(format string, args ...interface{}) StateFn {
+	msg := fmt.Sprintf(format, args...)
+	start := l.pos - 10
+	if start < 0 {
+		start = 0
+	}
+	l.tokens <- token.NewToken(
+		token.ILLEGAL,
+		fmt.Sprintf("Error at char %d: '%s'\n%s", l.pos, l.input[start:l.pos+1], msg),
+	)
+	//panic("PANIC")
+	return nil
+}
+
+func varDeclState(lx *Lexer) StateFn {
+	return initState
 }
 
 func New(input string) (lex *Lexer) {
@@ -92,6 +127,9 @@ func New(input string) (lex *Lexer) {
 		tokens:  make(chan token.Token, 2),
 		stateFn: initState,
 	}
+
+	fmt.Println(fmt.Sprintf("lexer: %+v", lex))
+	go lex.run()
 
 	return
 }
