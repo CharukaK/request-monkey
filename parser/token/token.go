@@ -19,7 +19,12 @@ const (
 	COLON           // character `:`
 	ASSIGN          // character `=`
 
-	ANY_TEXT // any type of text url sections, values, keys, payloads
+	VAR_NAME   // variable name declaration
+	VAR_VALUE  // value section of the variables
+	IDENTIFIER // value identifiers of the value inserts
+
+    LBRACE // value insert start `{{`
+    RBRACE // value insert end `}}`
 
 	// methods
 	POST

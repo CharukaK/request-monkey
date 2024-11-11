@@ -1,86 +1,97 @@
 package lexer
 
 import (
-	"bytes"
+	"strings"
+	"unicode/utf8"
 
 	"github.com/CharukaK/request-monkey/parser/token"
 )
 
+type StateFn func(l *Lexer) StateFn
+
 type Lexer struct {
-	input        string
-	position     int  // current position
-	readPosition int  // next character position
-	ch           byte // current character
+	input   string
+	start   int // starting position of the current text chunk
+	pos     int // current reading position of the text chunk
+	width   int // width of the rune
+	stateFn StateFn
+	tokens  chan token.Token
 }
 
-func (lx *Lexer) readChar() {
-	if lx.readPosition >= len(lx.input) {
-		lx.ch = 0 // ascii starts with 1 therefore, setting it to 0 means nil i.e. EOF
-	} else {
-		lx.ch = lx.input[lx.readPosition]
+func (lx *Lexer) emit(t token.TokenType) {
+	lx.tokens <- token.Token{
+		Type:    t,
+		Literal: lx.input[lx.start:lx.pos],
 	}
 
-	lx.position = lx.readPosition
-	lx.readPosition += 1
+	lx.start = lx.pos
 }
 
-func (lx *Lexer) NextToken() (tok token.Token) {
-	lx.skipWhiteSpaces()
+func (lx *Lexer) run() {
+	for state := lx.stateFn; state != nil; {
+		state = state(lx)
+	}
+	close(lx.tokens)
+}
 
-	switch lx.ch {
+func (lx *Lexer) next() (ch rune) {
+	if lx.pos >= len(lx.input) {
+		lx.width = 0
+		return 0 // this will represet the EOF
+	}
+
+	ch, lx.width = utf8.DecodeRuneInString(lx.input[lx.pos:])
+
+	lx.pos += lx.width
+	return
+}
+
+func (lx *Lexer) backup() {
+	lx.pos -= lx.width
+}
+
+func (lx *Lexer) ignore() {
+	lx.start = lx.pos
+}
+
+func (lx *Lexer) peek() (ch rune) {
+	ch = lx.next()
+	lx.backup()
+	return
+}
+
+// consumes the character if it is from a valid set of characters
+func (lx *Lexer) accept(valid string) bool {
+	if strings.IndexRune(valid, lx.next()) > 0 {
+		return true
+	}
+	lx.backup()
+	return false
+}
+
+// consumes until the lexer come across an invalid string
+func (lx *Lexer) acceptRun(valid string) {
+	for strings.IndexRune(valid, lx.next()) > 0 {
+	}
+	lx.backup()
+}
+
+func initState(lx *Lexer) StateFn {
+	switch lx.next() {
 	case 0:
-		tok.Literal = ""
-		tok.Type = token.EOF
-	case '#':
-		lx.skipUntilNewLineOrEof()
-		tok = lx.NextToken()
-	case '\n':
-		tok.Literal = ""
-		tok.Type = token.NEW_LINE
-	default:
-		if isAlphaNumeric(lx.ch) {
-			tok.Literal = lx.readAnyText()
-			tok.Type = token.ANY_TEXT
-		} else {
-			tok.Literal = string(lx.ch)
-			tok.Type = token.ILLEGAL
-		}
+		lx.emit(token.EOF)
+    case '@':
 	}
 
-	lx.readChar()
-	return
+	return nil
 }
 
-func (lx *Lexer) skipWhiteSpaces() {
-	for lx.ch == ' ' || lx.ch == '\t' {
-		lx.readChar()
+func New(input string) (lex *Lexer) {
+	lex = &Lexer{
+		input:   input,
+		tokens:  make(chan token.Token, 2),
+		stateFn: initState,
 	}
-}
 
-func (lx *Lexer) readAnyText() (val string) {
-	buf := bytes.NewBuffer(make([]byte, 0))
-	for isAlphaNumeric(lx.ch) {
-		if err := buf.WriteByte(lx.ch); err != nil {
-			panic(err)
-		}
-		lx.readChar()
-	}
-	val = buf.String()
-	return
-}
-
-func (lx *Lexer) skipUntilNewLineOrEof() {
-	for lx.ch != '\r' && lx.ch != '\n' && lx.ch != '0' {
-		lx.readChar()
-	}
-}
-
-func isAlphaNumeric(ch byte) bool {
-	return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || (ch >= '0' && ch <= '9')
-}
-
-func New(input string) (l *Lexer) {
-	l = &Lexer{input: input}
-	l.readChar()
 	return
 }
