@@ -30,7 +30,7 @@ func (lx *Lexer) emit(t token.TokenType) {
 
 func (lx *Lexer) run() {
 	for state := lx.stateFn; state != nil; {
-        fmt.Printf("%+v\n", lx.stateFn)
+		fmt.Printf("%+v\n", lx.stateFn)
 		state = state(lx)
 	}
 	close(lx.tokens)
@@ -71,23 +71,40 @@ func (lx *Lexer) accept(valid string) bool {
 	return false
 }
 
+func (lx *Lexer) ifNotAccept(invalid string) bool {
+	if strings.IndexRune(invalid, lx.next()) > 0 {
+		lx.backup()
+		return true
+	}
+
+	return false
+}
+
 // consumes until the lexer come across an invalid string
-func (lx *Lexer) acceptRun(valid string) {
+func (lx *Lexer) acceptAndRun(valid string) {
 	for strings.IndexRune(valid, lx.next()) > 0 {
 	}
 	lx.backup()
 }
 
-func (lx *Lexer) NextItem() token.Token {
-	for {
-		select {
-		case token := <-lx.tokens:
-			return token
-		default:
-			lx.stateFn = lx.stateFn(lx)
-		}
+func (lx *Lexer) ifNotAcceptAndRun(invalid string) {
+	for strings.IndexRune(invalid, lx.next()) == -1 {
 	}
-	panic("not reached")
+
+	lx.backup()
+}
+
+func (lx *Lexer) NextItem() *token.Token {
+	val, ok := <-lx.tokens
+
+	fmt.Println("Next item called")
+	fmt.Println(fmt.Sprintf("val: %+v", val))
+
+	if ok {
+		return &val
+	}
+
+	return nil
 }
 
 func initState(lx *Lexer) StateFn {
@@ -95,7 +112,7 @@ func initState(lx *Lexer) StateFn {
 	case 0:
 		lx.emit(token.EOF)
 	case '@':
-		lx.emit(token.VAR_DECL_PREFIX)
+		lx.backup()
 		return varDeclState
 	}
 
@@ -118,7 +135,27 @@ func (l *Lexer) errorf(format string, args ...interface{}) StateFn {
 }
 
 func varDeclState(lx *Lexer) StateFn {
+	endProcessing := false
+	for !endProcessing {
+		switch lx.next() {
+		case '@':
+			lx.emit(token.VAR_DECL_PREFIX)
+			return variableNameState
+		case '=':
+			// validate variable name
+		case '\n', 0:
+			// emit value
+			endProcessing = true
+		}
+	}
+
 	return initState
+}
+
+func variableNameState(lx *Lexer) StateFn {
+	lx.ifNotAcceptAndRun(" -\n=")
+
+	return varDeclState
 }
 
 func New(input string) (lex *Lexer) {
