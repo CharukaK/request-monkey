@@ -14,9 +14,9 @@ func TestVarDecl(t *testing.T) {
 		expectedLiteral string
 	}{
 		{expectedType: token.VAR_DECL_PREFIX, expectedLiteral: "@"},
-		// {expectedType: token.VAR_NAME, expectedLiteral: "hello"},
-		// {expectedType: token.ASSIGN, expectedLiteral: "="},
-		// {expectedType: token.VAR_VALUE, expectedLiteral: "asdfkjasdlfkj"},
+		{expectedType: token.VAR_NAME, expectedLiteral: "hello"},
+		{expectedType: token.ASSIGN, expectedLiteral: "="},
+		{expectedType: token.VAR_VALUE, expectedLiteral: "asdfkjasdlfkj"},
 	}
 
 	l := New(input)

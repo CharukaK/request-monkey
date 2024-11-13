@@ -74,10 +74,10 @@ func (lx *Lexer) accept(valid string) bool {
 func (lx *Lexer) ifNotAccept(invalid string) bool {
 	if strings.IndexRune(invalid, lx.next()) > 0 {
 		lx.backup()
-		return true
+		return false
 	}
 
-	return false
+	return true
 }
 
 // consumes until the lexer come across an invalid string
@@ -88,7 +88,7 @@ func (lx *Lexer) acceptAndRun(valid string) {
 }
 
 func (lx *Lexer) ifNotAcceptAndRun(invalid string) {
-	for strings.IndexRune(invalid, lx.next()) == -1 {
+	for !(strings.IndexRune(invalid, lx.next()) > 0) {
 	}
 
 	lx.backup()
@@ -136,26 +136,36 @@ func (l *Lexer) errorf(format string, args ...interface{}) StateFn {
 
 func varDeclState(lx *Lexer) StateFn {
 	endProcessing := false
+
 	for !endProcessing {
 		switch lx.next() {
 		case '@':
 			lx.emit(token.VAR_DECL_PREFIX)
-			return variableNameState
+			lx.ifNotAcceptAndRun(" -\n=")
+
+			varName := lx.input[lx.start:lx.pos]
+
+			if !(('a' <= varName[0] && varName[0] <= 'z') ||
+				('A' <= varName[0] && varName[0] <= 'Z')) {
+				lx.errorf("invalid start character for variable name")
+			}
+
+			switch lx.peek() {
+			case '=', '\n':
+				lx.emit(token.VAR_NAME)
+			case '-':
+				lx.errorf("found '-' in variable name")
+			}
 		case '=':
-			// validate variable name
+			lx.emit(token.ASSIGN)
 		case '\n', 0:
 			// emit value
+            lx.emit(token.VAR_VALUE)
 			endProcessing = true
 		}
 	}
 
 	return initState
-}
-
-func variableNameState(lx *Lexer) StateFn {
-	lx.ifNotAcceptAndRun(" -\n=")
-
-	return varDeclState
 }
 
 func New(input string) (lex *Lexer) {
