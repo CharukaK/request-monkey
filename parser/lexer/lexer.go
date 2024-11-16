@@ -94,17 +94,19 @@ func (lx *Lexer) ifNotAcceptAndRun(invalid string) {
 	lx.backup()
 }
 
-func (lx *Lexer) NextItem() *token.Token {
-	val, ok := <-lx.tokens
+func (lx *Lexer) NextToken() token.Token {
+	// the states can't have more than 2 emits it will block the main thread and hang
+	for {
+		select {
+		case val := <-lx.tokens:
 
-	fmt.Println("Next item called")
-	fmt.Println(fmt.Sprintf("val: %+v", val))
-
-	if ok {
-		return &val
+			return val
+		default:
+			lx.stateFn = lx.stateFn(lx)
+		}
 	}
 
-	return nil
+	panic("Next item not reached")
 }
 
 func initState(lx *Lexer) StateFn {
@@ -114,6 +116,12 @@ func initState(lx *Lexer) StateFn {
 	case '@':
 		lx.backup()
 		return varDeclState
+	case '#':
+		lx.backup()
+		return commentState
+	default:
+		lx.ignore()
+        return lx.stateFn
 	}
 
 	return nil
@@ -135,48 +143,79 @@ func (l *Lexer) errorf(format string, args ...interface{}) StateFn {
 }
 
 func varDeclState(lx *Lexer) StateFn {
-	endProcessing := false
+	if lx.next() != '@' {
+		return lx.errorf("expected character '@'")
+	}
 
-	for !endProcessing {
-		switch lx.next() {
-		case '@':
-			lx.emit(token.VAR_DECL_PREFIX)
-			lx.ifNotAcceptAndRun(" -\n=")
+	lx.emit(token.VAR_DECL_PREFIX)
 
-			varName := lx.input[lx.start:lx.pos]
+	for lx.accept("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789") {
+		// generate the name string
+	}
 
-			if !(('a' <= varName[0] && varName[0] <= 'z') ||
-				('A' <= varName[0] && varName[0] <= 'Z')) {
-				lx.errorf("invalid start character for variable name")
-			}
+	lx.emit(token.VAR_NAME)
 
-			switch lx.peek() {
-			case '=', '\n':
-				lx.emit(token.VAR_NAME)
-			case '-':
-				lx.errorf("found '-' in variable name")
-			}
-		case '=':
+	lx.ignoreWhiteSpaces()
+
+	for {
+		ch := lx.next()
+
+		if ch == '=' {
 			lx.emit(token.ASSIGN)
-		case '\n', 0:
-			// emit value
-            lx.emit(token.VAR_VALUE)
-			endProcessing = true
+			break
+		} else {
+			return lx.errorf("expected symbol '='")
 		}
 	}
 
+	lx.ignoreWhiteSpaces()
+
+    for {
+        ch := lx.next()
+        if ch == '\n' || ch == 0 {
+            break;
+        }
+    }
+
+    lx.backup()
+
+    if lx.start != lx.pos {
+        lx.emit(token.VAR_VALUE)
+    }
+
+	return initState
+}
+
+func (lx *Lexer) ignoreWhiteSpaces() {
+	if lx.next() == ' ' {
+		lx.ignore()
+		lx.ignoreWhiteSpaces()
+	} else {
+		lx.backup()
+	}
+}
+
+func commentState(lx *Lexer) StateFn {
+    for {
+        ch := lx.next()
+        if ch == '\n' || ch == 0 {
+            break
+        }
+    }
+
+	lx.backup()
 	return initState
 }
 
 func New(input string) (lex *Lexer) {
 	lex = &Lexer{
 		input:   input,
-		tokens:  make(chan token.Token, 2),
+		tokens:  make(chan token.Token, 5),
 		stateFn: initState,
 	}
 
 	fmt.Println(fmt.Sprintf("lexer: %+v", lex))
-	go lex.run()
+	// go lex.run()
 
 	return
 }
