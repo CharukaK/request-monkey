@@ -119,9 +119,14 @@ func initState(lx *Lexer) StateFn {
 	case '#':
 		lx.backup()
 		return commentState
-	default:
+	case ' ', '\t', '\n':
 		lx.ignore()
-        return lx.stateFn
+		return initState
+	case 'G', 'D', 'P', 'H', 'O':
+		lx.backup()
+		return requestState
+	default:
+		return lx.errorf("unexpected char")
 	}
 
 	return nil
@@ -170,18 +175,18 @@ func varDeclState(lx *Lexer) StateFn {
 
 	lx.ignoreWhiteSpaces()
 
-    for {
-        ch := lx.next()
-        if ch == '\n' || ch == 0 {
-            break;
-        }
-    }
+	for {
+		ch := lx.next()
+		if ch == '\n' || ch == 0 {
+			break
+		}
+	}
 
-    lx.backup()
+	lx.backup()
 
-    if lx.start != lx.pos {
-        lx.emit(token.VAR_VALUE)
-    }
+	if lx.start != lx.pos {
+		lx.emit(token.VAR_VALUE)
+	}
 
 	return initState
 }
@@ -196,14 +201,39 @@ func (lx *Lexer) ignoreWhiteSpaces() {
 }
 
 func commentState(lx *Lexer) StateFn {
-    for {
-        ch := lx.next()
-        if ch == '\n' || ch == 0 {
-            break
-        }
-    }
+	for {
+		ch := lx.next()
+		if ch == '\n' || ch == 0 {
+			break
+		}
+	}
 
 	lx.backup()
+	return initState
+}
+
+func requestState(lx *Lexer) StateFn {
+	for {
+		ch := lx.next()
+		if ch == ' ' || ch == '\n' || ch == 0 {
+			lx.backup()
+			break
+		}
+	}
+
+	method := lx.input[lx.start:lx.pos]
+
+	switch method {
+	case "POST", "GET", "PUT", "PATCH", "DELETE", "HEAD", "CONNECT", "OPTIONS", "TRACE":
+		lx.emit(token.METHOD)
+	default:
+		return lx.errorf("invalid method type")
+	}
+
+    lx.ignoreWhiteSpaces()
+
+
+
 	return initState
 }
 
