@@ -104,7 +104,7 @@ func TestRequestDecl(t *testing.T) {
 		{expectedType: token.ASSIGN, expectedLiteral: "="},
 		{expectedType: token.VAR_VALUE, expectedLiteral: "abc123"},
 
-		// {expectedType: token.METHOD, expectedLiteral: "POST"},
+		{expectedType: token.METHOD, expectedLiteral: "POST"},
 		// {expectedType: token.URL_SEGMENT, expectedLiteral: "http://{{host}}/users"},
 		// {expectedType: token.HTTP_VERSION, expectedLiteral: "HTTP/1.1"},
 		//

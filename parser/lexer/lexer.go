@@ -8,6 +8,11 @@ import (
 	"github.com/CharukaK/request-monkey/parser/token"
 )
 
+const (
+	from_url = iota
+	from_keyval
+)
+
 type StateFn func(l *Lexer) StateFn
 
 type Lexer struct {
@@ -124,9 +129,9 @@ func initState(lx *Lexer) StateFn {
 		return initState
 	case 'G', 'D', 'P', 'H', 'O':
 		lx.backup()
-		return requestState
+		return requestMethodState
 	default:
-		return lx.errorf("unexpected char")
+		return lx.errorf("invalid character found!")
 	}
 
 	return nil
@@ -212,27 +217,65 @@ func commentState(lx *Lexer) StateFn {
 	return initState
 }
 
-func requestState(lx *Lexer) StateFn {
+func requestMethodState(lx *Lexer) StateFn {
+	// process the request method statements
+
 	for {
 		ch := lx.next()
+
 		if ch == ' ' || ch == '\n' || ch == 0 {
 			lx.backup()
 			break
 		}
 	}
 
-	method := lx.input[lx.start:lx.pos]
-
-	switch method {
-	case "POST", "GET", "PUT", "PATCH", "DELETE", "HEAD", "CONNECT", "OPTIONS", "TRACE":
+	if strings.Index("POST GET PUT DELETE PATCH HEAD CONNECT OPTIONS TRACE", lx.input[lx.start:lx.pos]) > -1 {
 		lx.emit(token.METHOD)
-	default:
-		return lx.errorf("invalid method type")
+		if lx.peek() != '\n' {
+			return urlState
+		}
+	} else {
+		return lx.errorf("invalid method type '%s'", lx.input[lx.start:lx.pos])
 	}
 
-    lx.ignoreWhiteSpaces()
+	return requestBodyState
+}
 
+func urlState(lx *Lexer) StateFn {
+	for {
+		ch := lx.next()
+		if ch == '{' && lx.peek() == '{' {
 
+		} else if ch == ' ' || ch == '\n' || ch == 0 {
+			lx.backup()
+			break
+		}
+	}
+
+	return requestBodyState
+}
+
+func valueInsertState(lx *Lexer, from int) StateFn {
+	for {
+		ch := lx.next()
+
+		if ch == '}' && ch == '}' {
+		} else if ch == ' ' || ch == '\n' || ch == 0 {
+			break
+		}
+	}
+	switch from {
+	case from_url:
+		return urlState
+	case from_keyval:
+	}
+
+	return nil
+}
+
+func requestBodyState(lx *Lexer) StateFn {
+	// process header values
+	// process payload
 
 	return initState
 }
