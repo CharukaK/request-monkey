@@ -105,8 +105,13 @@ func TestRequestDecl(t *testing.T) {
 		{expectedType: token.VAR_VALUE, expectedLiteral: "abc123"},
 
 		{expectedType: token.METHOD, expectedLiteral: "POST"},
-		// {expectedType: token.URL_SEGMENT, expectedLiteral: "http://{{host}}/users"},
-		// {expectedType: token.HTTP_VERSION, expectedLiteral: "HTTP/1.1"},
+		{expectedType: token.URL_SEGMENT, expectedLiteral: "http://"},
+		{expectedType: token.LBRACE, expectedLiteral: "{{"},
+		{expectedType: token.IDENTIFIER, expectedLiteral: "host"},
+		{expectedType: token.RBRACE, expectedLiteral: "}}"},
+		{expectedType: token.URL_SEGMENT, expectedLiteral: "/users"},
+
+		{expectedType: token.HTTP_VERSION, expectedLiteral: "HTTP/1.1"},
 		//
 		// {expectedType: token.HEADER_KEY, expectedLiteral: "Authorization"},
 		// {expectedType: token.HEADER_VAL_SEGMENT, expectedLiteral: "Bearer {{token}}"},

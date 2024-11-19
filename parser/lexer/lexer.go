@@ -242,12 +242,43 @@ func requestMethodState(lx *Lexer) StateFn {
 }
 
 func urlState(lx *Lexer) StateFn {
+	lx.ignoreWhiteSpaces()
 	for {
 		ch := lx.next()
 		if ch == '{' && lx.peek() == '{' {
-
-		} else if ch == ' ' || ch == '\n' || ch == 0 {
 			lx.backup()
+			if lx.start != lx.pos {
+				lx.emit(token.URL_SEGMENT)
+			}
+			lx.next()
+			lx.next()
+			lx.emit(token.LBRACE)
+			return valueInsertState(lx, from_url)
+		} else if ch == ' ' {
+			lx.backup()
+			lx.emit(token.URL_SEGMENT)
+			return httpVersionState
+		} else if ch == '\n' || ch == 0 {
+			lx.backup()
+			lx.emit(token.URL_SEGMENT)
+			break
+		}
+	}
+
+	return requestBodyState
+}
+
+func httpVersionState(lx *Lexer) StateFn {
+    lx.ignoreWhiteSpaces()
+	for {
+		ch := lx.next()
+		if ch == ' ' || ch == '\n' || ch == 0 {
+			lx.backup()
+			if strings.Index("HTTP/1.1 HTTP/2.0", lx.input[lx.start:lx.pos]) > -1 {
+				lx.emit(token.HTTP_VERSION)
+			} else {
+				return lx.errorf("Expected a valid http version")
+			}
 			break
 		}
 	}
@@ -256,21 +287,32 @@ func urlState(lx *Lexer) StateFn {
 }
 
 func valueInsertState(lx *Lexer, from int) StateFn {
-	for {
-		ch := lx.next()
-
-		if ch == '}' && ch == '}' {
-		} else if ch == ' ' || ch == '\n' || ch == 0 {
-			break
+	return func(l *Lexer) StateFn {
+		for {
+			ch := lx.next()
+			if ch == '}' && lx.peek() == '}' {
+				lx.backup()
+				if lx.start != lx.pos {
+					l.emit(token.IDENTIFIER)
+				}
+				lx.next()
+				lx.next()
+				l.emit(token.RBRACE)
+				break
+			} else if ch == '\n' || ch == 0 {
+				return lx.errorf("expected closing braces '}}'")
+			}
 		}
-	}
-	switch from {
-	case from_url:
-		return urlState
-	case from_keyval:
-	}
 
-	return nil
+		switch from {
+		case from_url:
+			return urlState
+		case from_keyval:
+			// TODO call back to key value state
+		}
+
+		return nil
+	}
 }
 
 func requestBodyState(lx *Lexer) StateFn {
