@@ -319,6 +319,13 @@ func requestBodyState(lx *Lexer) StateFn {
 	// process header values
 	// process payload
 
+    for {
+        ch := lx.next()
+
+        if ch == ':' {
+        }
+    }
+
 	return initState
 }
 
