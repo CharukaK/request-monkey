@@ -46,6 +46,7 @@ braces (`{{ }}`). For example, `{{identifier}}` will be replaced by the value as
 ```
 method url protocol-version?
 headers*
+
 payload
 ```
 
@@ -53,7 +54,7 @@ payload
 - **URL** denotes the target endpoint.
 - **Protocol Version** (optional) defines the HTTP version, such as HTTP/1.1 or HTTP/2.0. If omitted, the default 
 protocol is assumed to be HTTP/1.1.
-- **Headers** (zero or more) define request headers as `key: value`, each on a new line. There should be a blank line 
+- **Headers** (zero or more) define request headers as `key: value`, each on a new line. There should be two blank lines 
 between the headers and the payload.
 - **Payload** contains the request body content, which can be in any text format (e.g., JSON, XML, plain text) and 
 follows the headers.

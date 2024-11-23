@@ -27,11 +27,40 @@ const (
 	RBRACE // value insert end `}}`
 
 	METHOD // methods POST GET PUT DELETE PATCH HEAD CONNECT OPTIONS TRACE
-    URL_SEGMENT
-    HTTP_VERSION
-    HEADER_KEY
-    HEADER_VAL_SEGMENT
+	URL_SEGMENT
+	HTTP_VERSION
+	HEADER_KEY
+	HEADER_VAL_SEGMENT
 )
+
+var tokenTypeToString = map[TokenType]string{
+	ILLEGAL:            "ILLEGAL",
+	EOF:                "EOF",
+	NEW_LINE:           "NEW_LINE",
+	COMMENT:            "COMMENT",
+	ESC_CHAR:           "ESC_CHAR",
+	VAR_DECL_PREFIX:    "VAR_DECL_PREFIX",
+	COLON:              "COLON",
+	ASSIGN:             "ASSIGN",
+	VAR_NAME:           "VAR_NAME",
+	VAR_VALUE:          "VAR_VALUE",
+	IDENTIFIER:         "IDENTIFIER",
+	LBRACE:             "LBRACE",
+	RBRACE:             "RBRACE",
+	METHOD:             "METHOD",
+	URL_SEGMENT:        "URL_SEGMENT",
+	HTTP_VERSION:       "HTTP_VERSION",
+	HEADER_KEY:         "HEADER_KEY",
+	HEADER_VAL_SEGMENT: "HEADER_VAL_SEGMENT",
+}
+
+func GetTokenTypeString(tType TokenType) string {
+	if val, ok := tokenTypeToString[tType]; ok {
+		return val
+	}
+
+	return "unknown"
+}
 
 func NewToken(tt TokenType, value string) Token {
 	return Token{

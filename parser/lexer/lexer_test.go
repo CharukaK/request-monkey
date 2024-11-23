@@ -112,13 +112,18 @@ func TestRequestDecl(t *testing.T) {
 		{expectedType: token.URL_SEGMENT, expectedLiteral: "/users"},
 
 		{expectedType: token.HTTP_VERSION, expectedLiteral: "HTTP/1.1"},
-		//
-		// {expectedType: token.HEADER_KEY, expectedLiteral: "Authorization"},
-		// {expectedType: token.HEADER_VAL_SEGMENT, expectedLiteral: "Bearer {{token}}"},
-		//
-		// {expectedType: token.HEADER_KEY, expectedLiteral: "Content-Type"},
-		// {expectedType: token.HEADER_VAL_SEGMENT, expectedLiteral: "{{contentType}}"},
 
+		{expectedType: token.HEADER_KEY, expectedLiteral: "Authorization"},
+		{expectedType: token.COLON, expectedLiteral: ":"},
+		{expectedType: token.HEADER_VAL_SEGMENT, expectedLiteral: "Bearer "},
+		{expectedType: token.LBRACE, expectedLiteral: "{{"},
+		{expectedType: token.IDENTIFIER, expectedLiteral: "token"},
+		{expectedType: token.RBRACE, expectedLiteral: "}}"},
+		{expectedType: token.HEADER_KEY, expectedLiteral: "Content-Type"},
+		{expectedType: token.COLON, expectedLiteral: ":"},
+		{expectedType: token.LBRACE, expectedLiteral: "{{"},
+		{expectedType: token.IDENTIFIER, expectedLiteral: "contentType"},
+		{expectedType: token.RBRACE, expectedLiteral: "}}"},
 	}
 
 	l := New(input)
@@ -127,7 +132,10 @@ func TestRequestDecl(t *testing.T) {
 		tok := l.NextToken()
 
 		if tok.Type != tc.expectedType {
-			t.Fatalf(`Token type mismatch: expected '%d', got '%d'`, tc.expectedType, tok.Type)
+			t.Fatalf(`Token type mismatch: expected '%s', got '%d'='%s'`,
+				token.GetTokenTypeString(tc.expectedType),
+				tok.Type, token.GetTokenTypeString(tok.Type),
+			)
 		}
 
 		if tok.Literal != tc.expectedLiteral {

@@ -35,7 +35,6 @@ func (lx *Lexer) emit(t token.TokenType) {
 
 func (lx *Lexer) run() {
 	for state := lx.stateFn; state != nil; {
-		fmt.Printf("%+v\n", lx.stateFn)
 		state = state(lx)
 	}
 	close(lx.tokens)
@@ -233,6 +232,9 @@ func requestMethodState(lx *Lexer) StateFn {
 		lx.emit(token.METHOD)
 		if lx.peek() != '\n' {
 			return urlState
+		} else {
+			lx.next()
+			lx.ignore()
 		}
 	} else {
 		return lx.errorf("invalid method type '%s'", lx.input[lx.start:lx.pos])
@@ -258,7 +260,13 @@ func urlState(lx *Lexer) StateFn {
 			lx.backup()
 			lx.emit(token.URL_SEGMENT)
 			return httpVersionState
-		} else if ch == '\n' || ch == 0 {
+		} else if ch == '\n' {
+			lx.backup()
+			lx.emit(token.URL_SEGMENT)
+			lx.next()
+			lx.ignore()
+			break
+		} else if ch == 0 {
 			lx.backup()
 			lx.emit(token.URL_SEGMENT)
 			break
@@ -269,7 +277,7 @@ func urlState(lx *Lexer) StateFn {
 }
 
 func httpVersionState(lx *Lexer) StateFn {
-    lx.ignoreWhiteSpaces()
+	lx.ignoreWhiteSpaces()
 	for {
 		ch := lx.next()
 		if ch == ' ' || ch == '\n' || ch == 0 {
@@ -279,6 +287,12 @@ func httpVersionState(lx *Lexer) StateFn {
 			} else {
 				return lx.errorf("Expected a valid http version")
 			}
+
+			if lx.peek() == '\n' {
+				lx.next()
+				lx.ignore()
+			}
+
 			break
 		}
 	}
@@ -308,7 +322,7 @@ func valueInsertState(lx *Lexer, from int) StateFn {
 		case from_url:
 			return urlState
 		case from_keyval:
-			// TODO call back to key value state
+			return handleHeaderValue
 		}
 
 		return nil
@@ -319,14 +333,58 @@ func requestBodyState(lx *Lexer) StateFn {
 	// process header values
 	// process payload
 
-    for {
-        ch := lx.next()
+	lx.ignoreWhiteSpaces()
+	for {
+		ch := lx.next()
+		if ch == ':' {
+			lx.backup()
+			lx.emit(token.HEADER_KEY)
+			lx.next()
+			lx.emit(token.COLON)
+			return handleHeaderValue
+		} else if ch == '\n' || ch == 0 {
+			lx.backup()
+			if lx.start != lx.pos {
+				lx.emit(token.HEADER_KEY)
+				return lx.errorf("expected symbol ':'")
+			}
+			break
+		}
 
-        if ch == ':' {
-        }
-    }
+	}
+
 
 	return initState
+}
+
+func handleHeaderValue(lx *Lexer) StateFn {
+	lx.ignoreWhiteSpaces()
+	for {
+		ch := lx.next()
+		if ch == '{' && lx.peek() == '{' {
+			lx.backup()
+			if lx.start != lx.pos {
+				lx.emit(token.HEADER_VAL_SEGMENT)
+			}
+			lx.next()
+			lx.next()
+			lx.emit(token.LBRACE)
+			return valueInsertState(lx, from_keyval)
+		} else if ch == '\n' || ch == 0 {
+			lx.backup()
+			if lx.start != lx.pos {
+				lx.emit(token.HEADER_VAL_SEGMENT)
+			}
+
+            if lx.next() == '\n' {
+                lx.ignore()
+            }
+
+			break
+		}
+	}
+
+	return requestBodyState
 }
 
 func New(input string) (lex *Lexer) {
@@ -335,9 +393,6 @@ func New(input string) (lex *Lexer) {
 		tokens:  make(chan token.Token, 5),
 		stateFn: initState,
 	}
-
-	fmt.Println(fmt.Sprintf("lexer: %+v", lex))
-	// go lex.run()
 
 	return
 }
