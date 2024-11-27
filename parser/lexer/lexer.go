@@ -322,7 +322,7 @@ func valueInsertState(lx *Lexer, from int) StateFn {
 		case from_url:
 			return urlState
 		case from_keyval:
-			return handleHeaderValue
+			return headerValueState
 		}
 
 		return nil
@@ -341,7 +341,7 @@ func requestBodyState(lx *Lexer) StateFn {
 			lx.emit(token.HEADER_KEY)
 			lx.next()
 			lx.emit(token.COLON)
-			return handleHeaderValue
+			return headerValueState
 		} else if ch == '\n' || ch == 0 {
 			lx.backup()
 			if lx.start != lx.pos {
@@ -350,14 +350,22 @@ func requestBodyState(lx *Lexer) StateFn {
 			}
 			break
 		}
-
 	}
 
+	if lx.next() == '\n' {
+		lx.ignore()
+		lx.ignoreWhiteSpaces()
+		if lx.peek() == '\n' {
+            lx.next()
+            lx.ignore()
+			return payloadState
+		}
+	}
 
 	return initState
 }
 
-func handleHeaderValue(lx *Lexer) StateFn {
+func headerValueState(lx *Lexer) StateFn {
 	lx.ignoreWhiteSpaces()
 	for {
 		ch := lx.next()
@@ -376,15 +384,36 @@ func handleHeaderValue(lx *Lexer) StateFn {
 				lx.emit(token.HEADER_VAL_SEGMENT)
 			}
 
-            if lx.next() == '\n' {
-                lx.ignore()
-            }
+			if lx.next() == '\n' {
+				lx.ignore()
+			}
 
 			break
 		}
 	}
 
 	return requestBodyState
+}
+
+func payloadState(lx *Lexer) StateFn {
+	for {
+		ch := lx.next()
+
+		if ch == '\n' || ch == 0 {
+			lx.backup()
+			lx.emit(token.PAYLOAD_SEGMENT)
+			lx.next()
+			lx.ignore()
+			return payloadState
+		}
+
+		if strings.Index("POST GET PUT DELETE PATCH HEAD CONNECT OPTIONS TRACE # @", lx.input[lx.start:lx.pos]) > -1 {
+			lx.pos = lx.start
+			break
+		}
+	}
+
+	return initState
 }
 
 func New(input string) (lex *Lexer) {

@@ -31,6 +31,7 @@ const (
 	HTTP_VERSION
 	HEADER_KEY
 	HEADER_VAL_SEGMENT
+	PAYLOAD_SEGMENT
 )
 
 var tokenTypeToString = map[TokenType]string{
@@ -52,6 +53,7 @@ var tokenTypeToString = map[TokenType]string{
 	HTTP_VERSION:       "HTTP_VERSION",
 	HEADER_KEY:         "HEADER_KEY",
 	HEADER_VAL_SEGMENT: "HEADER_VAL_SEGMENT",
+	PAYLOAD_SEGMENT:    "PAYLOAD_SEGMENT",
 }
 
 func GetTokenTypeString(tType TokenType) string {

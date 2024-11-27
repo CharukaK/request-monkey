@@ -124,6 +124,10 @@ func TestRequestDecl(t *testing.T) {
 		{expectedType: token.LBRACE, expectedLiteral: "{{"},
 		{expectedType: token.IDENTIFIER, expectedLiteral: "contentType"},
 		{expectedType: token.RBRACE, expectedLiteral: "}}"},
+		{expectedType: token.PAYLOAD_SEGMENT, expectedLiteral: "{"},
+		// {expectedType: token.PAYLOAD_SEGMENT, expectedLiteral: `        "name": "John Doe",`},
+		// {expectedType: token.PAYLOAD_SEGMENT, expectedLiteral: `        "email": "john.doe@example.com"`},
+		// {expectedType: token.PAYLOAD_SEGMENT, expectedLiteral: "    }"},
 	}
 
 	l := New(input)
