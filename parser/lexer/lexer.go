@@ -356,8 +356,8 @@ func requestBodyState(lx *Lexer) StateFn {
 		lx.ignore()
 		lx.ignoreWhiteSpaces()
 		if lx.peek() == '\n' {
-            lx.next()
-            lx.ignore()
+			lx.next()
+			lx.ignore()
 			return payloadState
 		}
 	}
@@ -367,6 +367,7 @@ func requestBodyState(lx *Lexer) StateFn {
 
 func headerValueState(lx *Lexer) StateFn {
 	lx.ignoreWhiteSpaces()
+
 	for {
 		ch := lx.next()
 		if ch == '{' && lx.peek() == '{' {
@@ -378,16 +379,27 @@ func headerValueState(lx *Lexer) StateFn {
 			lx.next()
 			lx.emit(token.LBRACE)
 			return valueInsertState(lx, from_keyval)
-		} else if ch == '\n' || ch == 0 {
+		} else if ch == '\n' {
 			lx.backup()
 			if lx.start != lx.pos {
 				lx.emit(token.HEADER_VAL_SEGMENT)
 			}
+			lx.next()
+			lx.ignore()
+
+			lx.ignoreWhiteSpaces()
 
 			if lx.next() == '\n' {
 				lx.ignore()
+				return payloadState
 			}
 
+            return requestBodyState
+		} else if ch == 0 {
+			lx.backup()
+			if lx.start != lx.pos {
+				lx.emit(token.HEADER_VAL_SEGMENT)
+			}
 			break
 		}
 	}
@@ -396,6 +408,7 @@ func headerValueState(lx *Lexer) StateFn {
 }
 
 func payloadState(lx *Lexer) StateFn {
+    lx.ignoreWhiteSpaces()
 	for {
 		ch := lx.next()
 
@@ -407,10 +420,22 @@ func payloadState(lx *Lexer) StateFn {
 			return payloadState
 		}
 
-		if strings.Index("POST GET PUT DELETE PATCH HEAD CONNECT OPTIONS TRACE # @", lx.input[lx.start:lx.pos]) > -1 {
-			lx.pos = lx.start
-			break
-		}
+        val := lx.input[lx.start:lx.pos]
+
+        if strings.HasPrefix(val, "POST") ||
+        	strings.HasPrefix(val, "GET") ||
+        	strings.HasPrefix(val, "PUT") ||
+        	strings.HasPrefix(val, "DELETE") ||
+        	strings.HasPrefix(val, "PATCH") ||
+        	strings.HasPrefix(val, "HEAD") ||
+        	strings.HasPrefix(val, "CONNECT") ||
+        	strings.HasPrefix(val, "OPTIONS") ||
+        	strings.HasPrefix(val, "TRACE") ||
+        	strings.HasPrefix(val, "#") ||
+        	strings.HasPrefix(val, "@") {
+        	lx.pos = lx.start
+        	break
+        }
 	}
 
 	return initState
