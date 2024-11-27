@@ -408,7 +408,6 @@ func headerValueState(lx *Lexer) StateFn {
 }
 
 func payloadState(lx *Lexer) StateFn {
-    lx.ignoreWhiteSpaces()
 	for {
 		ch := lx.next()
 
