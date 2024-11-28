@@ -3,7 +3,7 @@ package lexer
 import (
 	"testing"
 
-	"github.com/CharukaK/request-monkey/parser/token"
+	"github.com/CharukaK/request-monkey/cli/token"
 )
 
 func TestVarDecl(t *testing.T) {

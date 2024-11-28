@@ -5,7 +5,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/CharukaK/request-monkey/parser/token"
+	"github.com/CharukaK/request-monkey/cli/token"
 )
 
 const (
