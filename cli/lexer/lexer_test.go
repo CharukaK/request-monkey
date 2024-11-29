@@ -14,7 +14,7 @@ func TestVarDecl(t *testing.T) {
 		expectedLiteral string
 	}{
 		{expectedType: token.VAR_DECL_PREFIX, expectedLiteral: "@"},
-		{expectedType: token.VAR_NAME, expectedLiteral: "hello"},
+		{expectedType: token.IDENTIFIER, expectedLiteral: "hello"},
 		{expectedType: token.ASSIGN, expectedLiteral: "="},
 		{expectedType: token.VAR_VALUE, expectedLiteral: "asdfkjasdlfkj"},
 	}
@@ -46,7 +46,7 @@ func TestCommentLine(t *testing.T) {
 		expectedLiteral string
 	}{
 		{expectedType: token.VAR_DECL_PREFIX, expectedLiteral: "@"},
-		{expectedType: token.VAR_NAME, expectedLiteral: "hello"},
+		{expectedType: token.IDENTIFIER, expectedLiteral: "hello"},
 		{expectedType: token.ASSIGN, expectedLiteral: "="},
 		{expectedType: token.VAR_VALUE, expectedLiteral: "asdfkjasdlfkj"},
 	}
@@ -90,17 +90,17 @@ func TestRequestDecl(t *testing.T) {
 		expectedLiteral string
 	}{
 		{expectedType: token.VAR_DECL_PREFIX, expectedLiteral: "@"},
-		{expectedType: token.VAR_NAME, expectedLiteral: "host"},
+		{expectedType: token.IDENTIFIER, expectedLiteral: "host"},
 		{expectedType: token.ASSIGN, expectedLiteral: "="},
 		{expectedType: token.VAR_VALUE, expectedLiteral: "api.example.com"},
 
 		{expectedType: token.VAR_DECL_PREFIX, expectedLiteral: "@"},
-		{expectedType: token.VAR_NAME, expectedLiteral: "contentType"},
+		{expectedType: token.IDENTIFIER, expectedLiteral: "contentType"},
 		{expectedType: token.ASSIGN, expectedLiteral: "="},
 		{expectedType: token.VAR_VALUE, expectedLiteral: "application/json"},
 
 		{expectedType: token.VAR_DECL_PREFIX, expectedLiteral: "@"},
-		{expectedType: token.VAR_NAME, expectedLiteral: "token"},
+		{expectedType: token.IDENTIFIER, expectedLiteral: "token"},
 		{expectedType: token.ASSIGN, expectedLiteral: "="},
 		{expectedType: token.VAR_VALUE, expectedLiteral: "abc123"},
 

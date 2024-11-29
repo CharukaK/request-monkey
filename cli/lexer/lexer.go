@@ -162,7 +162,7 @@ func varDeclState(lx *Lexer) StateFn {
 		// generate the name string
 	}
 
-	lx.emit(token.VAR_NAME)
+	lx.emit(token.IDENTIFIER)
 
 	lx.ignoreWhiteSpaces()
 
