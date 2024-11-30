@@ -147,3 +147,87 @@ func TestRequestDecl(t *testing.T) {
 		}
 	}
 }
+
+func TestRequestDeclMulti(t *testing.T) {
+	input := `
+    # Request 1
+    POST http://{{host}}/users HTTP/1.1
+    Authorization: Bearer {{token}}
+    Content-Type: {{contentType}}
+
+    {
+        "name": "John Doe",
+        "email": "john.doe@example.com"
+    }
+
+    # Request 2
+    GET http://{{host}}/users/{{userId}} HTTP/1.1
+    Authorization: Bearer {{token}}
+    `
+
+	testcases := []struct {
+		expectedType    token.TokenType
+		expectedLiteral string
+	}{
+		{expectedType: token.METHOD, expectedLiteral: "POST"},
+		{expectedType: token.URL_SEGMENT, expectedLiteral: "http://"},
+		{expectedType: token.LBRACE, expectedLiteral: "{{"},
+		{expectedType: token.IDENTIFIER, expectedLiteral: "host"},
+		{expectedType: token.RBRACE, expectedLiteral: "}}"},
+		{expectedType: token.URL_SEGMENT, expectedLiteral: "/users"},
+		{expectedType: token.HTTP_VERSION, expectedLiteral: "HTTP/1.1"},
+
+		{expectedType: token.HEADER_KEY, expectedLiteral: "Authorization"},
+		{expectedType: token.COLON, expectedLiteral: ":"},
+		{expectedType: token.HEADER_VAL_SEGMENT, expectedLiteral: "Bearer "},
+		{expectedType: token.LBRACE, expectedLiteral: "{{"},
+		{expectedType: token.IDENTIFIER, expectedLiteral: "token"},
+		{expectedType: token.RBRACE, expectedLiteral: "}}"},
+		{expectedType: token.HEADER_KEY, expectedLiteral: "Content-Type"},
+		{expectedType: token.COLON, expectedLiteral: ":"},
+		{expectedType: token.LBRACE, expectedLiteral: "{{"},
+		{expectedType: token.IDENTIFIER, expectedLiteral: "contentType"},
+		{expectedType: token.RBRACE, expectedLiteral: "}}"},
+		{expectedType: token.PAYLOAD_SEGMENT, expectedLiteral: "    {"},
+		{expectedType: token.PAYLOAD_SEGMENT, expectedLiteral: `        "name": "John Doe",`},
+		{expectedType: token.PAYLOAD_SEGMENT, expectedLiteral: `        "email": "john.doe@example.com"`},
+		{expectedType: token.PAYLOAD_SEGMENT, expectedLiteral: "    }"},
+		{expectedType: token.METHOD, expectedLiteral: "GET"},
+		{expectedType: token.URL_SEGMENT, expectedLiteral: "http://"},
+		{expectedType: token.LBRACE, expectedLiteral: "{{"},
+		{expectedType: token.IDENTIFIER, expectedLiteral: "host"},
+		{expectedType: token.RBRACE, expectedLiteral: "}}"},
+		{expectedType: token.URL_SEGMENT, expectedLiteral: "/users/"},
+		{expectedType: token.LBRACE, expectedLiteral: "{{"},
+		{expectedType: token.IDENTIFIER, expectedLiteral: "userId"},
+		{expectedType: token.RBRACE, expectedLiteral: "}}"},
+
+		{expectedType: token.HTTP_VERSION, expectedLiteral: "HTTP/1.1"},
+
+		{expectedType: token.HEADER_KEY, expectedLiteral: "Authorization"},
+		{expectedType: token.COLON, expectedLiteral: ":"},
+		{expectedType: token.HEADER_VAL_SEGMENT, expectedLiteral: "Bearer "},
+		{expectedType: token.LBRACE, expectedLiteral: "{{"},
+		{expectedType: token.IDENTIFIER, expectedLiteral: "token"},
+		{expectedType: token.RBRACE, expectedLiteral: "}}"},
+	}
+
+	l := New(input)
+
+	for _, tc := range testcases {
+		tok := l.NextToken()
+
+		if tok.Type != tc.expectedType {
+            t.Logf(`value = %s`, tok.Literal)
+			t.Fatalf(`Token type mismatch: expected '%s', got '%d'='%s'`,
+				token.GetTokenTypeString(tc.expectedType),
+				tok.Type, token.GetTokenTypeString(tok.Type),
+			)
+		}
+
+		if tok.Literal != tc.expectedLiteral {
+			t.Fatalf(`Token value mismatch: expected '%s', got '%s'`, tc.expectedLiteral, tok.Literal)
+		}
+	}
+}
+

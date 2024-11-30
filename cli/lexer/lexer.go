@@ -231,6 +231,7 @@ func requestMethodState(lx *Lexer) StateFn {
 	if strings.Index("POST GET PUT DELETE PATCH HEAD CONNECT OPTIONS TRACE", lx.input[lx.start:lx.pos]) > -1 {
 		lx.emit(token.METHOD)
 		if lx.peek() != '\n' {
+            lx.ignoreWhiteSpaces()
 			return urlState
 		} else {
 			lx.next()
@@ -244,7 +245,6 @@ func requestMethodState(lx *Lexer) StateFn {
 }
 
 func urlState(lx *Lexer) StateFn {
-	lx.ignoreWhiteSpaces()
 	for {
 		ch := lx.next()
 		if ch == '{' && lx.peek() == '{' {
@@ -258,7 +258,10 @@ func urlState(lx *Lexer) StateFn {
 			return valueInsertState(lx, from_url)
 		} else if ch == ' ' {
 			lx.backup()
-			lx.emit(token.URL_SEGMENT)
+            if lx.pos != lx.start {
+                lx.emit(token.URL_SEGMENT)
+            }
+            lx.ignoreWhiteSpaces()
 			return httpVersionState
 		} else if ch == '\n' {
 			lx.backup()
@@ -277,7 +280,6 @@ func urlState(lx *Lexer) StateFn {
 }
 
 func httpVersionState(lx *Lexer) StateFn {
-	lx.ignoreWhiteSpaces()
 	for {
 		ch := lx.next()
 		if ch == ' ' || ch == '\n' || ch == 0 {
@@ -394,7 +396,7 @@ func headerValueState(lx *Lexer) StateFn {
 				return payloadState
 			}
 
-            return requestBodyState
+			return requestBodyState
 		} else if ch == 0 {
 			lx.backup()
 			if lx.start != lx.pos {
@@ -409,32 +411,35 @@ func headerValueState(lx *Lexer) StateFn {
 
 func payloadState(lx *Lexer) StateFn {
 	for {
-		ch := lx.next()
 
+		val := strings.Trim(lx.input[lx.start:lx.pos], " ")
+
+		if strings.HasPrefix(val, "POST") ||
+			strings.HasPrefix(val, "GET") ||
+			strings.HasPrefix(val, "PUT") ||
+			strings.HasPrefix(val, "DELETE") ||
+			strings.HasPrefix(val, "PATCH") ||
+			strings.HasPrefix(val, "HEAD") ||
+			strings.HasPrefix(val, "CONNECT") ||
+			strings.HasPrefix(val, "OPTIONS") ||
+			strings.HasPrefix(val, "TRACE") ||
+			strings.HasPrefix(val, "#") ||
+			strings.HasPrefix(val, "@") {
+			lx.pos = lx.start
+			break
+		}
+
+		ch := lx.next()
 		if ch == '\n' || ch == 0 {
 			lx.backup()
-			lx.emit(token.PAYLOAD_SEGMENT)
+			if lx.pos != lx.start {
+				lx.emit(token.PAYLOAD_SEGMENT)
+			}
 			lx.next()
 			lx.ignore()
 			return payloadState
 		}
 
-        val := lx.input[lx.start:lx.pos]
-
-        if strings.HasPrefix(val, "POST") ||
-        	strings.HasPrefix(val, "GET") ||
-        	strings.HasPrefix(val, "PUT") ||
-        	strings.HasPrefix(val, "DELETE") ||
-        	strings.HasPrefix(val, "PATCH") ||
-        	strings.HasPrefix(val, "HEAD") ||
-        	strings.HasPrefix(val, "CONNECT") ||
-        	strings.HasPrefix(val, "OPTIONS") ||
-        	strings.HasPrefix(val, "TRACE") ||
-        	strings.HasPrefix(val, "#") ||
-        	strings.HasPrefix(val, "@") {
-        	lx.pos = lx.start
-        	break
-        }
 	}
 
 	return initState
