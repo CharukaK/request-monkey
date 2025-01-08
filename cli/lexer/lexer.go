@@ -132,7 +132,7 @@ func initState(lx *Lexer) StateFn {
 		return lx.errorf("invalid character found!")
 	}
 
-	return nil
+	return initState 
 }
 
 // terminates lexer and returns a formatted error message to lexer.items
@@ -230,7 +230,7 @@ func requestMethodState(lx *Lexer) StateFn {
 	if strings.Index("POST GET PUT DELETE PATCH HEAD CONNECT OPTIONS TRACE", lx.input[lx.start:lx.pos]) > -1 {
 		lx.emit(token.METHOD)
 		if lx.peek() != '\n' {
-            lx.ignoreWhiteSpaces()
+			lx.ignoreWhiteSpaces()
 			return urlState
 		} else {
 			lx.next()
@@ -257,10 +257,10 @@ func urlState(lx *Lexer) StateFn {
 			return valueInsertState(lx, from_url)
 		} else if ch == ' ' {
 			lx.backup()
-            if lx.pos != lx.start {
-                lx.emit(token.URL_SEGMENT)
-            }
-            lx.ignoreWhiteSpaces()
+			if lx.pos != lx.start {
+				lx.emit(token.URL_SEGMENT)
+			}
+			lx.ignoreWhiteSpaces()
 			return httpVersionState
 		} else if ch == '\n' {
 			lx.backup()

@@ -17,6 +17,7 @@ func TestVarDecl(t *testing.T) {
 		{expectedType: token.IDENTIFIER, expectedLiteral: "hello"},
 		{expectedType: token.ASSIGN, expectedLiteral: "="},
 		{expectedType: token.VAR_VALUE, expectedLiteral: "asdfkjasdlfkj"},
+		{expectedType: token.EOF, expectedLiteral: ""},
 	}
 
 	l := New(input)

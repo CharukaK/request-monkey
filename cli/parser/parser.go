@@ -1,6 +1,8 @@
 package parser
 
 import (
+	"fmt"
+
 	"github.com/CharukaK/request-monkey/cli/ast"
 	"github.com/CharukaK/request-monkey/cli/lexer"
 	"github.com/CharukaK/request-monkey/cli/token"
@@ -17,6 +19,9 @@ type Parser struct {
 func (p *Parser) nextToken() {
 	p.currToken = p.peekToken
 	p.peekToken = p.lexer.NextToken()
+
+	fmt.Println(">>> curr", p.currToken)
+	fmt.Println(">>> peek", p.peekToken)
 }
 
 func (p *Parser) Parse() {
@@ -24,12 +29,14 @@ func (p *Parser) Parse() {
 	for {
 		switch p.currToken.Type {
 		case token.EOF:
-			break
+			return
 		case token.ILLEGAL:
 			p.errors = append(p.errors, p.currToken)
 		default:
 			if stmt := p.parseStatement(); stmt != nil {
 				p.document.Statements = append(p.document.Statements, stmt)
+			} else {
+				p.nextToken()
 			}
 		}
 	}
@@ -53,7 +60,7 @@ func (p *Parser) parseVariable() *ast.Variable {
 		p.nextToken()
 	}
 
-	if p.currToken.Type == token.VAR_NAME {
+	if p.currToken.Type == token.IDENTIFIER {
 		varDecl.Name.Text = p.currToken.Literal
 		p.nextToken()
 	}
