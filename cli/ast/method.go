@@ -12,5 +12,3 @@ func (m *Method) String() string {
     return m.Text
 }
 
-
-

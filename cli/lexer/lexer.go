@@ -103,7 +103,6 @@ func (lx *Lexer) NextToken() token.Token {
 	for {
 		select {
 		case val := <-lx.tokens:
-
 			return val
 		default:
 			lx.stateFn = lx.stateFn(lx)

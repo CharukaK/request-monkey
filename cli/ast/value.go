@@ -2,6 +2,7 @@ package ast
 
 import "bytes"
 
+// Values
 type Value struct {
 	Parts []ValuePart
 }
@@ -20,11 +21,13 @@ func (v *Value) String() string {
     return buf.String()
 }
 
+// Value segment
 type ValuePart interface {
     Node
     valuePartType()
 }
 
+// literals
 type LiteralValue struct {
     Text string
 }
@@ -39,7 +42,7 @@ func (lv *LiteralValue) String() string {
     return lv.Text
 }
 
-
+// references
 type ReferenceValue struct {
     Reference Identifier 
 }
