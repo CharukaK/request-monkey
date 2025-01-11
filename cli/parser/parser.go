@@ -35,7 +35,6 @@ func (p *Parser) Parse() {
 		default:
 			if stmt := p.parseStatement(); stmt != nil {
 				p.document.Statements = append(p.document.Statements, stmt)
-			} else {
 				p.nextToken()
 			}
 		}
@@ -47,6 +46,7 @@ func (p *Parser) parseStatement() ast.Statement {
 	case token.VAR_DECL_PREFIX:
 		return p.parseVariable()
 	case token.METHOD:
+		return p.parseRequest()
 	default:
 	}
 
@@ -77,6 +77,42 @@ func (p *Parser) parseVariable() *ast.Variable {
 		case token.VAR_VALUE:
 			varDecl.Value.Parts = append(varDecl.Value.Parts, &ast.LiteralValue{Text: p.currToken.Literal})
 			return varDecl
+		default:
+			return nil
+		}
+	}
+
+}
+
+func (p *Parser) parseRequest() *ast.Request {
+	requestDecl := &ast.Request{}
+
+	if p.currToken.Type == token.METHOD {
+		requestDecl.Method.Text = p.currToken.Literal
+	}
+
+	withinUrl := true
+
+	for {
+		switch p.currToken.Type {
+		case token.URL_SEGMENT:
+			requestDecl.Url.Parts = append(requestDecl.Url.Parts, &ast.LiteralValue{Text: p.currToken.Literal})
+		case token.IDENTIFIER:
+			if withinUrl {
+				requestDecl.Url.Parts = append(
+					requestDecl.Url.Parts,
+					&ast.ReferenceValue{Reference: ast.Identifier{Text: p.currToken.Literal}},
+				)
+			} else {
+            }
+		case token.HTTP_VERSION:
+			withinUrl = false
+		case token.HEADER_KEY:
+			withinUrl = false
+		case token.HEADER_VAL_SEGMENT:
+			withinUrl = false
+		case token.PAYLOAD_SEGMENT:
+			withinUrl = false
 		default:
 			return nil
 		}
