@@ -86,38 +86,38 @@ func (p *Parser) parseVariable() *ast.Variable {
 
 func (p *Parser) parseRequest() *ast.Request {
 	requestDecl := &ast.Request{}
+	inUrl := true
+    prevHeaderKey := ""
 
 	if p.currToken.Type == token.METHOD {
 		requestDecl.Method.Text = p.currToken.Literal
+		p.nextToken()
 	}
-
-	withinUrl := true
-
 	for {
 		switch p.currToken.Type {
+		case token.COLON:
 		case token.URL_SEGMENT:
 			requestDecl.Url.Parts = append(requestDecl.Url.Parts, &ast.LiteralValue{Text: p.currToken.Literal})
 		case token.IDENTIFIER:
-			if withinUrl {
-				requestDecl.Url.Parts = append(
-					requestDecl.Url.Parts,
-					&ast.ReferenceValue{Reference: ast.Identifier{Text: p.currToken.Literal}},
-				)
+			if inUrl {
+				reference := &ast.ReferenceValue{}
+                reference.Reference.Text = p.currToken.Literal
+                requestDecl.Url.Parts = append(requestDecl.Url.Parts, reference)
 			} else {
+                
             }
-		case token.HTTP_VERSION:
-			withinUrl = false
 		case token.HEADER_KEY:
-			withinUrl = false
+			inUrl = false
 		case token.HEADER_VAL_SEGMENT:
-			withinUrl = false
 		case token.PAYLOAD_SEGMENT:
-			withinUrl = false
+		case token.HTTP_VERSION:
+			inUrl = false
 		default:
 			return nil
 		}
 	}
 
+	return requestDecl
 }
 
 func NewParser(lexer lexer.Lexer) (p Parser) {
